@@ -125,5 +125,3 @@ if open_port:
     connect_to_port(ip, port)
 else:
     print("No open port found for the specified IP address.")
-
-connect_to_port(ip, port)
