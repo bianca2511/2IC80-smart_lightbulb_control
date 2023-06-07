@@ -1,48 +1,51 @@
 import telnetlib
 import json
 import nmap
-import subprocess
-
 
 class Command:
-    def power(power: bool, duration: int = 200):
-        power = "on" if power else "off"
+    def power(status: str, duration: int = 200):
 
-        return {"id": 0, "method": "set_power", "params": [power, "smooth", duration]}
+        # power = "on" if power else "off"
+        return {"id": 0, "method": "set_power", "params": [status, "smooth", duration]}
 
-    def color_temperature(temperature: int):
-        # ct 1700 - 6500
+    def color(red: int, green: int, blue: int):
+        return {"id": 0, "method": "set_rgb", "params": [red * 65536 + green * 256 + blue]}
 
-        assert temperature >= 1700
-        assert temperature <= 6500
-
-        return {"id": 0, "method": "set_ct_abx", "params": [temperature]}
-
-
-command_list = [
-    Command.power(True),
-    Command.power(False),
-    Command.power(True, 1000),
-    Command.power(False, 1000),
-    Command.color_temperature(1700),
-    Command.color_temperature(6500),
-]
-# Client chooses the command from the list
+    def brightness(brightness: int):
+        assert brightness > 1 and brightness <= 100
+        return {"id": 0, "method": "set_bright", "params": [brightness]}
 
 
-def choose_command():
-    print("Available commands:")
-    for i, command in enumerate(command_list):
-        print(f"{i}. {command}")
+# Client chooses the setting to control from the list
+settings = ["Power", "Color", "Brightness", "Temperature"]
+
+def choose_setting():
+    print("Available settings:")
+    for i, setting in enumerate(settings):
+        print(f"{i}. {setting}")
     selected_index = int(
-        input("Choose a command (enter the corresponding number): "))
+        input("Choose a setting you want to change (enter the number): "))
 
-    if selected_index < 0 or selected_index >= len(command_list):
+    if selected_index < 0 or selected_index >= len(settings):
         print("Invalid choice. Please try again.")
     else:
-        selected_command = command_list[selected_index]
+        selected_setting = settings[selected_index]
+    return selected_setting
 
-    return selected_command
+
+def map_setting_to_command(setting):
+        if(setting == 'Power'):
+            power = input('Do you want to turn the light on or off? ')
+            return Command.power(power)
+        elif(setting == 'Color'):
+            print('Choose a value between 0 and 255 for each color \n')
+            r = int(input('red: '))
+            g = int(input('green: '))
+            b = int(input('blue: '))
+            return Command.color(r, g, b)
+        elif(setting == 'Brightness'):
+            bright = int(input('Choose a brightnes level between 1 and 100: '))
+            return Command.brightness(bright)
 
 
 def connect_to_port(ip, port):
@@ -51,20 +54,25 @@ def connect_to_port(ip, port):
         telnet = telnetlib.Telnet(ip, port)
         print("Connected to " + str(ip) + " "+str(port))
 
-        # Send a command and receive the response
-        command = choose_command()
-        send_command(telnet, command)
-        response = receive_response(telnet)
-        print("Received response:\n", response)
-
-        # # Close the Telnet connection
-        # tn.close()
-        # print("Telnet connection closed")
-
     except ConnectionRefusedError:
         print("Connection refused. Make sure the IP and port are correct.")
     except Exception as e:
         print("An error occurred:", str(e))
+
+    
+    more = 'y'
+    
+    while(more != 'n'):
+        command = map_setting_to_command(choose_setting())
+        send_command(telnet, command)
+        response = receive_response(telnet)
+        print("Received response: ", response)
+        more = input('Another command? (y/n) ')
+        
+    # Close the Telnet connection
+    telnet.close()
+    print("Telnet connection closed")
+
 
 
 def send_command(telnet, command):
@@ -101,8 +109,8 @@ def find_open_port(ip):
 
 
 # Define the IP address you want to scan for an open port
-# ip = input('What IP address do you want to use?\n')
-ip = "192.168.178.140"
+ip = input('What is the IP address of your lightbulb?\n')
+
 # Find an open port of the IP address using nmap
 # open_port = find_open_port(ip)
 open_port = 55443
