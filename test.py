@@ -1,6 +1,7 @@
 import telnetlib
 import json
 import nmap
+import subprocess
 
 class Command:
     def power(status: str, duration: int = 200):
@@ -95,11 +96,11 @@ def receive_response(tn):
 
 def find_open_port(ip):
     scanner = nmap.PortScanner()
-    scanner.scan(ip, arguments='-p-')
+    scanner.scan(ip, arguments='-T4 -p-')
 
     for host in scanner.all_hosts():
         if scanner[host].state() == 'up':
-            for proto in scanner[host].all_protocols():
+            for proto in scanner[host].all_tcp():
                 port_list = scanner[host][proto].keys()
                 for port in port_list:
                     if scanner[host][proto][port]['state'] == 'open':
@@ -107,15 +108,25 @@ def find_open_port(ip):
 
     return None
 
+def run_ipconfig():
+    output = subprocess.check_output(['ipconfig']).decode('utf-8')
+    print(output)
+
+def discover_ips(wifi_ip):
+    command = ['nmap', '-sn', wifi_ip[:12]+'*']
+    output = subprocess.check_output(command).decode('utf-8')
+    print(output + '\n')
+
+run_ipconfig()
+wifi_ip=input("What is the Wireless LAN adapter Wifi: IPv4 Address?\n")
+discover_ips(wifi_ip)
 
 # Define the IP address you want to scan for an open port
-ip = input('What is the IP address of your lightbulb?\n')
-
+ip = input('What is the IP address of your lightbulb from the list above?\n')
 # Find an open port of the IP address using nmap
-# open_port = find_open_port(ip)
-open_port = 55443
+open_port = find_open_port(ip)
 if open_port:
-    print("Open port found:" + str(open_port))
+    print("Open port found: " + str(open_port))
     # Define the port you want to connect to
     port = open_port
 
