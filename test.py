@@ -6,8 +6,6 @@ import subprocess
 
 class Command:
     def power(status: str, duration: int = 200):
-
-        # power = "on" if power else "off"
         return {"id": 0, "method": "set_power", "params": [status, "smooth", duration]}
 
     def color(red: int, green: int, blue: int):
@@ -16,6 +14,9 @@ class Command:
     def brightness(brightness: int):
         assert brightness > 1 and brightness <= 100
         return {"id": 0, "method": "set_bright", "params": [brightness]}
+    
+    def temperature(temperature: int):
+        return {"id": 0, "method": "set_ct_abx", "params": [temperature]}
 
 
 # Client chooses the setting to control from the list
@@ -49,6 +50,9 @@ def map_setting_to_command(setting):
     elif(setting == 'Brightness'):
         bright = int(input('Choose a brightnes level between 1 and 100: '))
         return Command.brightness(bright)
+    elif(setting == 'Temperature'):
+        temp = int(input("Choose a color temperature between 1700 and 6500: "))
+        return Command.temperature(temp)
 
 
 def connect_to_port(ip, port):
@@ -135,7 +139,8 @@ discover_ips(wifi_ip)
 # Define the IP address you want to scan for an open port
 ip = input('What is the IP address of your lightbulb from the list above?\n')
 # Find an open port of the IP address using nmap
-open_port = find_open_port(ip)
+# open_port = find_open_port(ip)
+open_port = 55443
 if open_port:
     print("Open port found: " + str(open_port))
     # Define the port you want to connect to
