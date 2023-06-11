@@ -118,7 +118,12 @@ def run_ipconfig():
 
 
 def discover_ips(wifi_ip):
-    command = ['nmap', '-sn', wifi_ip[:12]+'*']
+    split = wifi_ip.rsplit(".", 1)
+
+# The first part will contain the IP address without the last segment
+    wifi_ip = split[0]
+
+    command = ['nmap', '-sn', wifi_ip + ".*"]
     output = subprocess.check_output(command).decode('utf-8')
     print(output + '\n')
 
